@@ -9,4 +9,5 @@
 /vendor/
 /public/info.php/
 /migrations/
+.vscode/launch.json
 ###< symfony/framework-bundle ###
