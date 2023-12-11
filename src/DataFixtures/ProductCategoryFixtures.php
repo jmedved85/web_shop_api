@@ -35,8 +35,11 @@ class ProductCategoryFixtures extends Fixture implements DependentFixtureInterfa
     
             foreach ($selectedCategories as $category) {
                 $productCategory = new ProductCategory();
-                $productCategory->setProduct($product);
-                $productCategory->setCategory($category);
+                $productCategory
+                    ->setProduct($product)
+                    ->setCategory($category)
+                ;
+                
                 $manager->persist($productCategory);
             }
         }
