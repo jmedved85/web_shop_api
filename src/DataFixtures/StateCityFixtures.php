@@ -1,16 +1,32 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\DataFixtures;
 
 use App\Entity\City;
 use App\Entity\State;
 use Doctrine\Bundle\FixturesBundle\Fixture;
+use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ObjectManager;
 
 class StateCityFixtures extends Fixture
 {
+    use FixturesTrait;
+
+    private $entityManager;
+
+    public function __construct(EntityManagerInterface $entityManager)
+    {
+        $this->entityManager = $entityManager;
+    }
+
     public function load(ObjectManager $manager)
     {
+        // Truncate 'city' and 'state' tables to reset auto-increment ID values
+        $this->truncateTable(City::class);
+        $this->truncateTable(State::class);
+
         for ($i = 1; $i <= 3; $i++) {
             $state = new State();
 

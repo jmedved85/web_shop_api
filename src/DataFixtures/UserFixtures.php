@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\DataFixtures;
 
 use App\Entity\City;
@@ -10,6 +12,8 @@ use Doctrine\ORM\EntityManagerInterface;
 
 class UserFixtures extends Fixture
 {
+    use FixturesTrait;
+
     private $entityManager;
 
     public function __construct(EntityManagerInterface $entityManager)
@@ -19,6 +23,9 @@ class UserFixtures extends Fixture
 
     public function load(ObjectManager $manager)
     {
+        // Truncate 'user' table to reset auto-increment ID values
+        $this->truncateTable(User::class);
+
         $cities = $this->entityManager->getRepository(City::class)->findAll();
 
         for ($i = 1; $i <= 5; $i++) {

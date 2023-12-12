@@ -43,7 +43,8 @@ class ProductRepository extends ServiceEntityRepository
     {
         $qb = $this->createQueryBuilder('p')
             ->setMaxResults($pageSize)
-            ->setFirstResult(($page - 1) * $pageSize);
+            ->setFirstResult(($page - 1) * $pageSize)
+        ;
 
         return $qb->getQuery()->getResult();
     }
@@ -55,6 +56,31 @@ class ProductRepository extends ServiceEntityRepository
             ->getQuery()
             ->getSingleScalarResult()
         ;
+    }
+
+    public function paginateByCategory(int $categoryId, int $page, int $pageSize)
+    {
+        $qb = $this->createQueryBuilder('p')
+            ->join('p.productCategories', 'pc')
+            ->andWhere('pc.category = :categoryId')
+            ->setParameter('categoryId', $categoryId)
+            ->setMaxResults($pageSize)
+            ->setFirstResult(($page - 1) * $pageSize)
+        ;
+
+        return $qb->getQuery()->getResult();
+    }
+
+    public function getTotalCountInCategory(int $categoryId): ?int
+    {
+        $qb = $this->createQueryBuilder('p')
+            ->select('COUNT(DISTINCT p.id) as total')
+            ->join('p.productCategories', 'pc')
+            ->andWhere('pc.category = :categoryId')
+            ->setParameter('categoryId', $categoryId)
+        ;
+    
+        return (int) $qb->getQuery()->getSingleScalarResult();
     }
 
 //    /**

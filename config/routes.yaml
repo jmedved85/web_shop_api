@@ -4,5 +4,15 @@
 
 product_list:
     path: /products
-    controller: App\Controller\ProductController::index
+    controller: App\Controller\ProductController::products
     methods: GET
+
+product_show:
+    path: '/products/{productId}'
+    controller: App\Controller\ProductController::showProduct
+    methods: GET
+
+products_in_category:
+    path: '/category/{categoryId}/products'
+    controller: 'App\Controller\ProductController::productsInCategory'
+    methods: ['GET']
