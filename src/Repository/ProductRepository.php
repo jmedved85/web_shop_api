@@ -83,6 +83,68 @@ class ProductRepository extends ServiceEntityRepository
         return (int) $qb->getQuery()->getSingleScalarResult();
     }
 
+    public function filterAndSortProducts(
+        int $page,
+        int $pageSize,
+        string $sortBy,
+        string $sortOrder,
+        ?string $filterByName = null,
+        ?string $filterByCategory = null,
+        ?float $filterByMaxPrice = null
+    ): array {
+        $queryBuilder = $this->createQueryBuilder('p')
+            ->setMaxResults($pageSize)
+            ->setFirstResult(($page - 1) * $pageSize)
+            ->orderBy("p.$sortBy", $sortOrder);
+
+        if ($filterByName) {
+            $queryBuilder->andWhere('p.name LIKE :name')
+                ->setParameter('name', '%' . $filterByName . '%');
+        }
+
+        if ($filterByCategory) {
+            $queryBuilder
+                ->join('p.categories', 'c')
+                ->andWhere('c.name = :categoryName')
+                ->setParameter('categoryName', $filterByCategory);
+        }
+
+        if ($filterByMaxPrice) {
+            $queryBuilder->andWhere('p.netPrice <= :maxPrice')
+                ->setParameter('maxPrice', $filterByMaxPrice);
+        }
+
+        return $queryBuilder->getQuery()->getResult();
+    }
+
+    public function getTotalFilteredCount(
+        ?string $filterByName = null,
+        ?string $filterByCategory = null,
+        ?float $filterByMaxPrice = null
+    ): int {
+        $queryBuilder = $this->createQueryBuilder('p')
+            ->select('COUNT(p.id)');
+
+        if ($filterByName) {
+            $queryBuilder->andWhere('p.name LIKE :name')
+                ->setParameter('name', '%' . $filterByName . '%');
+        }
+
+        if ($filterByCategory) {
+            $queryBuilder
+                ->join('p.categories', 'c')
+                ->andWhere('c.name = :categoryName')
+                ->setParameter('categoryName', $filterByCategory);
+        }
+
+        if ($filterByMaxPrice) {
+            $queryBuilder->andWhere('p.netPrice <= :maxPrice')
+                ->setParameter('maxPrice', $filterByMaxPrice);
+        }
+
+        return (int) $queryBuilder->getQuery()->getSingleScalarResult();
+    }
+
 //    /**
 //     * @return Product[] Returns an array of Product objects
 //     */

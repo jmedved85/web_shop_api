@@ -25,10 +25,24 @@ class PriceListFixtures extends Fixture
         // Truncate 'price_list' table to reset auto-increment ID values
         $this->truncateTable(PriceList::class);
 
+        $increaseOptions = [true, false, null];
+
         for ($i = 1; $i <= 5; $i++) {
             $priceList = new PriceList();
 
+            // Get a random index from the $increaseOptions array
+            $randomIndex = array_rand($increaseOptions);
+
+            // Assign the value at the random index to increasedPrice
+            $increasedPriceValue = $increaseOptions[$randomIndex];
+
             $priceList->setName("Price List $i");
+
+            if ($increasedPriceValue === null) {
+                $priceList->setIncreasedPrice(null);
+            } else {
+                $priceList->setIncreasedPrice((bool) $increasedPriceValue);
+            }
 
             $manager->persist($priceList);
 

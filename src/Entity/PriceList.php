@@ -29,6 +29,11 @@ class PriceList
      */
     private $productPriceLists;
 
+    /**
+     * @ORM\Column(type="boolean", nullable=true)
+     */
+    private $increasedPrice;
+
     public function __construct()
     {
         $this->productPriceLists = new ArrayCollection();
@@ -77,6 +82,18 @@ class PriceList
                 $productPriceList->setPriceList(null);
             }
         }
+
+        return $this;
+    }
+
+    public function isIncreasedPrice(): ?bool
+    {
+        return $this->increasedPrice;
+    }
+
+    public function setIncreasedPrice(?bool $increasedPrice): self
+    {
+        $this->increasedPrice = $increasedPrice;
 
         return $this;
     }

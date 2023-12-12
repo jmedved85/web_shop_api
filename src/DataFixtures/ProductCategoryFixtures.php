@@ -32,8 +32,8 @@ class ProductCategoryFixtures extends Fixture implements DependentFixtureInterfa
         $categories = $this->entityManager->getRepository(Category::class)->findAll();
 
         foreach ($products as $product) {
-            // Ensure that each product has at least one category (3 categories max for each product)
-            $numberOfCategories = max(1, mt_rand(1, min(3, count($categories))));
+            // Ensure that each product has at least one category (2 categories max for each product)
+            $numberOfCategories = max(1, mt_rand(1, min(2, count($categories))));
     
             shuffle($categories);
     

@@ -16,3 +16,13 @@ products_in_category:
     path: '/category/{categoryId}/products'
     controller: 'App\Controller\ProductController::productsInCategory'
     methods: ['GET']
+
+filtered_products:
+    path: '/filteredProducts'
+    controller: 'App\Controller\ProductController::filteredProducts'
+    methods: ['GET']
+
+create_order:
+    path: '/orders/new'
+    controller: 'App\Controller\ProductController::createOrder'
+    methods: ['POST']
