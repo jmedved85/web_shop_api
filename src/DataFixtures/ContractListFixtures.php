@@ -58,11 +58,13 @@ class ContractListFixtures extends Fixture implements DependentFixtureInterface
     private function getAgreedPriceForProduct(Product $product): ?string
     {
         $productPriceList = $this->entityManager->getRepository(ProductPriceList::class)
-            ->findOneBy(['product' => $product])
+            ->findBy(['product' => $product])
         ;
 
-        if ($productPriceList) {
-            return $productPriceList->getPrice();
+        if (!empty($productPriceList)) {
+            shuffle($productPriceList);
+
+            return $productPriceList[0]->getPrice();
         }
 
         return null;

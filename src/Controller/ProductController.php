@@ -9,8 +9,6 @@ use App\Entity\Order;
 use App\Entity\OrderProduct;
 use App\Entity\Product;
 use App\Entity\User;
-use App\Repository\ContractListRepository;
-use App\Repository\ProductPriceListRepository;
 use App\Repository\ProductRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -47,6 +45,8 @@ class ProductController extends AbstractController
 
         foreach ($paginator as $product) {
             $categories = $this->getProductCategories($product);
+            $priceListPrices = $this->getPriceListPrices($product);
+            $contractListPrices = $this->getContractListPrices($product);
 
             $data['items'][] = [
                 'id' => $product->getId(),
@@ -54,6 +54,8 @@ class ProductController extends AbstractController
                 'description' => $product->getDescription(),
                 'SKU' => $product->getSKU(),
                 'netPrice' => $product->getNetPrice(),
+                'priceListPrices' => $priceListPrices,
+                'contractListPrices' => $contractListPrices,
                 'published' => $product->isPublished(),
                 'categories' => $categories,
             ];
@@ -74,6 +76,8 @@ class ProductController extends AbstractController
         }
 
         $categories = $this->getProductCategories($product);
+        $priceListPrices = $this->getPriceListPrices($product);
+        $contractListPrices = $this->getContractListPrices($product);
 
         $data = [
             'id' => $product->getId(),
@@ -81,6 +85,8 @@ class ProductController extends AbstractController
             'description' => $product->getDescription(),
             'SKU' => $product->getSKU(),
             'netPrice' => $product->getNetPrice(),
+            'priceListPrices' => $priceListPrices,
+            'contractListPrices' => $contractListPrices,
             'published' => $product->isPublished(),
             'categories' => $categories
         ];
@@ -126,10 +132,7 @@ class ProductController extends AbstractController
     /**
      * @Route("/filtered-products", name="filtered_products", methods={"GET"})
      */
-    public function filteredProducts(Request $request, 
-        ProductRepository $productRepository, 
-        ProductPriceListRepository $productPriceListRepository, 
-        ContractListRepository $contractListRepository): JsonResponse
+    public function filteredProducts(Request $request, ProductRepository $productRepository): JsonResponse
     {
         $page = $request->query->getInt('page', 1);
         $pageSize = $request->query->getInt('pageSize', 10);
@@ -167,6 +170,8 @@ class ProductController extends AbstractController
 
         foreach ($paginator as $product) {
             $categories = $this->getProductCategories($product);
+            $priceListPrices = $this->getPriceListPrices($product);
+            $contractListPrices = $this->getContractListPrices($product);
 
             $data['items'][] = [
                 'id' => $product->getId(),
@@ -174,10 +179,13 @@ class ProductController extends AbstractController
                 'description' => $product->getDescription(),
                 'SKU' => $product->getSKU(),
                 'netPrice' => $product->getNetPrice(),
+                'priceListPrices' => $priceListPrices,
+                'contractListPrices' => $contractListPrices,
                 'published' => $product->isPublished(),
                 'categories' => $categories,
             ];
         }
+
         return $this->json($data);
     }
 
@@ -271,8 +279,10 @@ class ProductController extends AbstractController
         return $categories;
     }
 
-    function getContractListPrice(Product $product, User $user): string {
+    function getContractListPrice(Product $product, User $user): string
+    {
         $contractListRepository = $this->entityManager->getRepository(ContractList::class);
+
         $contractListProduct = $contractListRepository->findBy([
             'product' => $product,
             'user' => $user,
@@ -285,5 +295,29 @@ class ProductController extends AbstractController
         } else {
             return $product->getNetPrice();
         }
+    }
+
+    function getPriceListPrices(Product $product): array
+    {
+        $productPriceLists = $product->getProductPriceLists()->toArray();
+        $productPriceListPrices = [];
+
+        foreach ($productPriceLists as $list) {
+            $productPriceListPrices[$list->getPriceList()->getName()] = $list->getPrice();
+        }
+
+        return $productPriceListPrices;
+    }
+
+    function getContractListPrices(Product $product): array
+    {
+        $contractLists = $product->getContractLists()->toArray();
+        $contractListPrices = [];
+
+        foreach ($contractLists as $list) {
+            $contractListPrices[$list->getUser()->getName() . ' ' . $list->getUser()->getSurname()] = $list->getPrice();
+        }
+
+        return $contractListPrices;
     }
 }
