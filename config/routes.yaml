@@ -18,7 +18,7 @@ products_in_category:
     methods: ['GET']
 
 filtered_products:
-    path: '/filteredProducts'
+    path: '/filtered-products'
     controller: 'App\Controller\ProductController::filteredProducts'
     methods: ['GET']
 

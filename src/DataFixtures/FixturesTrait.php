@@ -11,7 +11,7 @@ trait FixturesTrait
         $connection = $this->entityManager->getConnection();
 
         $connection->executeStatement('SET FOREIGN_KEY_CHECKS=0;');
-        $connection->executeStatement(sprintf('TRUNCATE TABLE %s;', $this->entityManager->getClassMetadata($entityClass)->getTableName()));
+        $connection->executeStatement(sprintf('TRUNCATE TABLE `%s`;', $this->entityManager->getClassMetadata($entityClass)->getTableName()));
         $connection->executeStatement('SET FOREIGN_KEY_CHECKS=1;');
     }
 }

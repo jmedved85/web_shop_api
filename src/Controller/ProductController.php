@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Entity\ContractList;
 use App\Entity\Order;
 use App\Entity\OrderProduct;
+use App\Entity\Product;
 use App\Entity\User;
 use App\Repository\ContractListRepository;
+use App\Repository\ProductPriceListRepository;
 use App\Repository\ProductRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -38,8 +41,8 @@ class ProductController extends AbstractController
         $data = [
             'items' => [],
             'page' => $page,
-            'totalItems' =>  $totalCount,
             'pageSize' => $pageSize,
+            'totalItems' =>  $totalCount,
         ];
 
         foreach ($paginator as $product) {
@@ -99,8 +102,8 @@ class ProductController extends AbstractController
         $data = [
             'items' => [],
             'page' => $page,
-            'totalItems' =>  $totalCount,
             'pageSize' => $pageSize,
+            'totalItems' =>  $totalCount,
         ];
 
         foreach ($paginator as $product) {
@@ -120,32 +123,13 @@ class ProductController extends AbstractController
         return $this->json($data);
     }
 
-    function getProductCategories(object $product): ?array
-    {
-        $categories = [];
-
-        $productCategories = $product->getProductCategories()->toArray();
-
-        foreach ($productCategories as $item) {
-            $category = $item->getCategory();
-
-            $categories[] = [
-                'id' => $category->getId(),
-                'name' => $category->getName(),
-                'mainCategory' => [
-                    'id' => $category->getMainCategory()->getId(),
-                    'name' => $category->getMainCategory()->getName(),
-                ],
-            ];
-        }
-
-        return $categories;
-    }
-
     /**
      * @Route("/filtered-products", name="filtered_products", methods={"GET"})
      */
-    public function filteredProducts(Request $request, ProductRepository $productRepository, ContractListRepository $contractListRepository): JsonResponse
+    public function filteredProducts(Request $request, 
+        ProductRepository $productRepository, 
+        ProductPriceListRepository $productPriceListRepository, 
+        ContractListRepository $contractListRepository): JsonResponse
     {
         $page = $request->query->getInt('page', 1);
         $pageSize = $request->query->getInt('pageSize', 10);
@@ -154,15 +138,7 @@ class ProductController extends AbstractController
         $filterByName = $request->query->get('name');
         $filterByCategory = $request->query->get('category');
         $filterByMaxPrice = $request->query->get('maxPrice');
-
-        // Assuming the ContractList entity has a relation to Product entity and a specific user
-        $user = $this->getUser(); // Fetch the current user
-        $contractedProducts = $contractListRepository->findProductsForUser($user);
-
-        // Filter products based on contract list
-        $contractedProductIds = array_map(function ($contractedProduct) {
-            return $contractedProduct->getProduct()->getId();
-        }, $contractedProducts);
+        $filterByMinPrice = $request->query->get('minPrice');
 
         $paginator = $productRepository->filterAndSortProducts(
             $page,
@@ -172,21 +148,21 @@ class ProductController extends AbstractController
             $filterByName,
             $filterByCategory,
             $filterByMaxPrice,
-            $contractedProductIds
+            $filterByMinPrice
         );
 
         $totalCount = $productRepository->getTotalFilteredCount(
             $filterByName,
             $filterByCategory,
             $filterByMaxPrice,
-            $contractedProductIds
+            $filterByMinPrice,
         );
 
         $data = [
             'items' => [],
             'page' => $page,
-            'totalItems' =>  $totalCount,
             'pageSize' => $pageSize,
+            'totalItems' =>  $totalCount,
         ];
 
         foreach ($paginator as $product) {
@@ -217,7 +193,7 @@ class ProductController extends AbstractController
         }
 
         $userId = $requestData['user_id'];
-        $user = $this->entityManager->getRepository(User::class)->find($userId);
+        $user = $this->entityManager->getRepository(User::class)->findOneBy(['id' => $userId]);
 
         if (!$user) {
             return $this->json(['message' => 'User not found'], 404);
@@ -231,17 +207,19 @@ class ProductController extends AbstractController
 
         foreach ($requestData['products'] as $productData) {
             $vatPercentage = 25;
+            $discountPercentage = 10;
 
             $productId = $productData['product_id'];
-            $product = $productRepository->find($productId);
+            $product = $productRepository->findOneBy(['id' => $productId]);
 
             if (!$product) {
                 return $this->json(['message' => 'Product not found'], 404);
             }
 
             $quantity = $productData['quantity'];
-            $netPrice = $product->getNetPrice();
-            $unitPrice = strval($netPrice * ($vatPercentage / 100));
+            $netPrice = $this->getContractListPrice($product, $user);
+            $vatValue = $netPrice * $vatPercentage / 100;
+            $unitPrice = strval($netPrice + $vatValue);
 
             $orderProduct = new OrderProduct();
             $orderProduct->setProduct($product);
@@ -255,12 +233,57 @@ class ProductController extends AbstractController
             $totalPrice += $quantity * $unitPrice;
         }
 
-        // Set the total price for the order
-        $order->setTotalPrice($totalPrice);
+        if ($totalPrice >= 100) {
+            $discountValue = $totalPrice * $discountPercentage / 100;
+            $discountedPrice = $totalPrice - $discountValue;
+
+            $order->setTotalPrice(strval($discountedPrice));
+            $order->setDiscount($discountPercentage);
+        } else {
+            $order->setTotalPrice(strval($totalPrice));
+        }
 
         $this->entityManager->persist($order);
         $this->entityManager->flush();
 
         return $this->json(['message' => 'Order created successfully'], 201);
+    }
+
+    function getProductCategories(object $product): ?array
+    {
+        $categories = [];
+
+        $productCategories = $product->getProductCategories()->toArray();
+
+        foreach ($productCategories as $item) {
+            $category = $item->getCategory();
+
+            $categories[] = [
+                'id' => $category->getId(),
+                'name' => $category->getName(),
+                'mainCategory' => [
+                    'id' => $category->getMainCategory()->getId(),
+                    'name' => $category->getMainCategory()->getName(),
+                ],
+            ];
+        }
+
+        return $categories;
+    }
+
+    function getContractListPrice(Product $product, User $user): string {
+        $contractListRepository = $this->entityManager->getRepository(ContractList::class);
+        $contractListProduct = $contractListRepository->findBy([
+            'product' => $product,
+            'user' => $user,
+        ]);
+
+        if (!empty($contractListProduct)) {
+            $contractNetPrice = $contractListProduct[0]->getPrice();
+
+            return $contractNetPrice;
+        } else {
+            return $product->getNetPrice();
+        }
     }
 }

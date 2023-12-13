@@ -42,7 +42,8 @@ class ProductPriceListFixtures extends Fixture implements DependentFixtureInterf
                     $productPriceList
                         ->setProduct($product)
                         ->setPriceList($priceList)
-                        ->setPrice($this->calculatePrice($netPrice, $priceList->isIncreasedPrice()));
+                        ->setPrice($this->calculatePrice($netPrice, $priceList->isIncreasedPrice()))
+                    ;
 
                     $manager->persist($productPriceList);
                 }

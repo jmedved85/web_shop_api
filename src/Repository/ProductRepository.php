@@ -90,59 +90,87 @@ class ProductRepository extends ServiceEntityRepository
         string $sortOrder,
         ?string $filterByName = null,
         ?string $filterByCategory = null,
-        ?float $filterByMaxPrice = null
+        ?string $filterByMaxPrice = null,
+        ?string $filterByMinPrice = null
     ): array {
-        $queryBuilder = $this->createQueryBuilder('p')
+        $qb = $this->createQueryBuilder('p')
             ->setMaxResults($pageSize)
             ->setFirstResult(($page - 1) * $pageSize)
-            ->orderBy("p.$sortBy", $sortOrder);
+            ->orderBy("p.$sortBy", $sortOrder)
+        ;
 
         if ($filterByName) {
-            $queryBuilder->andWhere('p.name LIKE :name')
-                ->setParameter('name', '%' . $filterByName . '%');
+            $qb->andWhere('p.name LIKE :name')
+                ->setParameter('name', '%' . $filterByName . '%')
+            ;
         }
 
         if ($filterByCategory) {
-            $queryBuilder
-                ->join('p.categories', 'c')
+            $qb
+                ->join('p.productCategories', 'pc')
+                ->join('pc.category', 'c')
                 ->andWhere('c.name = :categoryName')
-                ->setParameter('categoryName', $filterByCategory);
+                ->setParameter('categoryName', $filterByCategory)
+            ;
         }
 
         if ($filterByMaxPrice) {
-            $queryBuilder->andWhere('p.netPrice <= :maxPrice')
-                ->setParameter('maxPrice', $filterByMaxPrice);
+            $qb->andWhere('p.netPrice <= :maxPrice')
+                ->setParameter('maxPrice', floatval($filterByMaxPrice))
+            ;
         }
 
-        return $queryBuilder->getQuery()->getResult();
+        if ($filterByMinPrice) {
+            $qb->andWhere('p.netPrice >= :minPrice')
+                ->setParameter('minPrice', floatval($filterByMinPrice))
+            ;
+        }
+
+        $result = $qb->getQuery()->getResult();
+
+        return $result;
     }
 
     public function getTotalFilteredCount(
         ?string $filterByName = null,
         ?string $filterByCategory = null,
-        ?float $filterByMaxPrice = null
+        ?string $filterByMaxPrice = null,
+        ?string $filterByMinPrice = null
     ): int {
-        $queryBuilder = $this->createQueryBuilder('p')
-            ->select('COUNT(p.id)');
+        $qb = $this->createQueryBuilder('p')
+            ->select('COUNT(p.id)')
+        ;
 
         if ($filterByName) {
-            $queryBuilder->andWhere('p.name LIKE :name')
-                ->setParameter('name', '%' . $filterByName . '%');
+            $qb->andWhere('p.name LIKE :name')
+                ->setParameter('name', '%' . $filterByName . '%')
+            ;
         }
 
         if ($filterByCategory) {
-            $queryBuilder
-                ->join('p.categories', 'c')
+            $qb
+                ->join('p.productCategories', 'pc')
+                ->join('pc.category', 'c')
                 ->andWhere('c.name = :categoryName')
-                ->setParameter('categoryName', $filterByCategory);
+                ->setParameter('categoryName', $filterByCategory)
+            ;
         }
 
         if ($filterByMaxPrice) {
-            $queryBuilder->andWhere('p.netPrice <= :maxPrice')
-                ->setParameter('maxPrice', $filterByMaxPrice);
+            $qb->andWhere('p.netPrice <= :maxPrice')
+                ->setParameter('maxPrice', floatval($filterByMaxPrice))
+            ;
         }
 
-        return (int) $queryBuilder->getQuery()->getSingleScalarResult();
+        if ($filterByMinPrice) {
+            $qb->andWhere('p.netPrice >= :minPrice')
+                ->setParameter('minPrice', floatval($filterByMinPrice))
+            ;
+        }
+
+        $result = (int) $qb->getQuery()->getSingleScalarResult();
+
+        return $result;
     }
 
 //    /**

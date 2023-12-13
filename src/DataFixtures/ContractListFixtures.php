@@ -34,18 +34,20 @@ class ContractListFixtures extends Fixture implements DependentFixtureInterface
 
         foreach ($users as $user) {
             foreach ($products as $product) {
-                $contractList = new ContractList();
-
-                $contractList
-                    ->setUser($user)
-                    ->setProduct($product)
-                ;
-
-                $agreedPrice = $this->getAgreedPriceForProduct($user, $product);
-
-                if ($agreedPrice !== null) {
-                    $contractList->setPrice($agreedPrice);
-                    $manager->persist($contractList);
+                if ($product->isPublished()) {
+                    $contractList = new ContractList();
+    
+                    $contractList
+                        ->setUser($user)
+                        ->setProduct($product)
+                    ;
+    
+                    $agreedPrice = $this->getAgreedPriceForProduct($product);
+    
+                    if ($agreedPrice !== null) {
+                        $contractList->setPrice($agreedPrice);
+                        $manager->persist($contractList);
+                    }
                 }
             }
         }
