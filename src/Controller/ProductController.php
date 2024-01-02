@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Entity\City;
 use App\Entity\ContractList;
 use App\Entity\Order;
 use App\Entity\OrderProduct;
@@ -218,15 +219,29 @@ class ProductController extends AbstractController
         }
 
         $userId = $requestData['user_id'];
+        $address = $requestData['address'];
+        $email = $requestData['email'];
+        $phone = $requestData['phone'];
+        $cityId = $requestData['city_id'];
+
         $user = $this->entityManager->getRepository(User::class)->findOneBy(['id' => $userId]);
+        $city = $this->entityManager->getRepository(City::class)->findOneBy(['id' => $cityId]);
 
         if (!$user) {
             return $this->json(['error' => 'User with id ' . $userId . ' not found.'], 404);
         }
 
+        if (!$city) {
+            return $this->json(['error' => 'City with id ' . $cityId . ' not found.'], 404);
+        }
+
         $order = new Order();
         $order->setOrderDate(new \DateTime());
         $order->setUser($user);
+        $order->setAddress($address);
+        $order->setEmail($email);
+        $order->setPhone($phone);
+        $order->setCity($city);
 
         $totalPrice = 0;
 

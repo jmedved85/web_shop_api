@@ -37,7 +37,7 @@ class UserFixtures extends Fixture
                 ->setSurname('Surname ' . $i)
                 ->setEmail('user' . $i . '@net.com')
                 ->setPhone('123456789' . $i)
-                ->setAddress($i . 'st Street')
+                ->setAddress('Street' . $i)
                 ->setCity($randomCity)
             ;
 

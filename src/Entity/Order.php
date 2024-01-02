@@ -45,6 +45,26 @@ class Order
      */
     private $orderProducts;
 
+    /**
+     * @ORM\Column(type="string", length=128, nullable=true)
+     */
+    private $email;
+
+    /**
+     * @ORM\Column(type="string", length=64, nullable=true)
+     */
+    private $phone;
+
+    /**
+     * @ORM\Column(type="string", length=128, nullable=true)
+     */
+    private $address;
+
+    /**
+     * @ORM\ManyToOne(targetEntity=City::class, inversedBy="orders")
+     */
+    private $city;
+
     public function __construct()
     {
         $this->orderProducts = new ArrayCollection();
@@ -129,6 +149,54 @@ class Order
                 $orderProduct->setOrder(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getEmail(): ?string
+    {
+        return $this->email;
+    }
+
+    public function setEmail(?string $email): self
+    {
+        $this->email = $email;
+
+        return $this;
+    }
+
+    public function getPhone(): ?string
+    {
+        return $this->phone;
+    }
+
+    public function setPhone(?string $phone): self
+    {
+        $this->phone = $phone;
+
+        return $this;
+    }
+
+    public function getAddress(): ?string
+    {
+        return $this->address;
+    }
+
+    public function setAddress(?string $address): self
+    {
+        $this->address = $address;
+
+        return $this;
+    }
+
+    public function getCity(): ?City
+    {
+        return $this->city;
+    }
+
+    public function setCity(?City $city): self
+    {
+        $this->city = $city;
 
         return $this;
     }
