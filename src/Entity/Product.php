@@ -45,22 +45,22 @@ class Product
     private $published;
 
     /**
-     * @ORM\OneToMany(targetEntity=ProductPriceList::class, mappedBy="product", cascade={"persist"}, orphanRemoval=true)
+     * @ORM\OneToMany(targetEntity=ProductPriceList::class, mappedBy="product", cascade={"persist"}, orphanRemoval=true, fetch="EAGER")
      */
     private $productPriceLists;
 
     /**
-     * @ORM\OneToMany(targetEntity=ProductCategory::class, mappedBy="product", cascade={"persist"}, orphanRemoval=true)
+     * @ORM\OneToMany(targetEntity=ProductCategory::class, mappedBy="product", cascade={"persist"}, orphanRemoval=true, fetch="EAGER")
      */
     private $productCategories;
 
     /**
-     * @ORM\OneToMany(targetEntity=ContractList::class, mappedBy="product", cascade={"persist"}, orphanRemoval=true)
+     * @ORM\OneToMany(targetEntity=ContractList::class, mappedBy="product", cascade={"persist"}, orphanRemoval=true, fetch="EAGER")
      */
     private $contractLists;
 
     /**
-     * @ORM\OneToMany(targetEntity=OrderProduct::class, mappedBy="product", cascade={"persist"}, orphanRemoval=true)
+     * @ORM\OneToMany(targetEntity=OrderProduct::class, mappedBy="product", cascade={"persist"}, orphanRemoval=true, fetch="EAGER")
      */
     private $orderProducts;
 

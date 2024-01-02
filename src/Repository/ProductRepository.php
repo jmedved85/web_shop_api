@@ -92,7 +92,9 @@ class ProductRepository extends ServiceEntityRepository
         ?string $filterByCategory = null,
         ?string $filterByMaxPrice = null,
         ?string $filterByMinPrice = null
-    ): array {
+    ): array 
+    {
+
         $qb = $this->createQueryBuilder('p')
             ->setMaxResults($pageSize)
             ->setFirstResult(($page - 1) * $pageSize)
@@ -136,7 +138,8 @@ class ProductRepository extends ServiceEntityRepository
         ?string $filterByCategory = null,
         ?string $filterByMaxPrice = null,
         ?string $filterByMinPrice = null
-    ): int {
+    ): int 
+    {
         $qb = $this->createQueryBuilder('p')
             ->select('COUNT(p.id)')
         ;
