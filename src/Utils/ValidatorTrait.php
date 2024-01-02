@@ -52,7 +52,43 @@ trait ValidatorTrait
         return [(int)$page, (int)$pageSize];
     }
 
-    private function idValidator($value, ValidatorInterface $validator, string $key = ''): ?int
+    private function idValidator(Request $request, ValidatorInterface $validator): ?array
+    {
+        $errors = [];
+
+        $userId = $request->query->get('userId');
+        $priceListId = $request->query->get('priceListId');
+
+        if (!is_numeric($userId)) {
+            $violations = $validator->validate($userId, [
+                new Assert\NotBlank(),
+                new Assert\Type(['type' => 'integer', 'message' => 'Value must be an integer.']),
+            ]);
+    
+            if (count($violations) > 0) {
+                foreach ($violations as $violation) {
+                    $errors['userId'][] = $violation->getMessage();
+                }
+            }
+        }
+
+        if (!is_numeric($priceListId)) {
+            $violations = $validator->validate($userId, [
+                new Assert\NotBlank(),
+                new Assert\Type(['type' => 'integer', 'message' => 'Value must be an integer.']),
+            ]);
+    
+            if (count($violations) > 0) {
+                foreach ($violations as $violation) {
+                    $errors['priceListId'][] = $violation->getMessage();
+                }
+            }
+        }
+
+        return [(int)$userId, (int)$priceListId];
+    }
+
+    private function urlParamValidator($value, ValidatorInterface $validator, string $key = ''): ?int
     {
         $errors = [];
 

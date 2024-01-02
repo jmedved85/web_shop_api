@@ -8,6 +8,7 @@ use App\Entity\City;
 use App\Entity\ContractList;
 use App\Entity\Order;
 use App\Entity\OrderProduct;
+use App\Entity\PriceList;
 use App\Entity\Product;
 use App\Entity\User;
 use App\Repository\ProductRepository;
@@ -36,9 +37,13 @@ class ProductController extends AbstractController
     {
         try {
             list($page, $pageSize) = $this->pageValidator($request, $validator);
+            list($userId, $priceListId) = $this->idValidator($request, $validator);
         } catch (Exception $e) {
             return new JsonResponse(json_decode($e->getMessage(), true), $e->getCode());
         }
+
+        $user = $this->entityManager->getRepository(User::class)->findOneBy(['id' => $userId]);
+        $priceList = $this->entityManager->getRepository(PriceList::class)->findOneBy(['id' => $priceListId]);
 
         $paginator = $repository->paginate($page, $pageSize);
         $totalCount = $repository->getTotalCount();
@@ -55,12 +60,28 @@ class ProductController extends AbstractController
             $priceListPrices = $this->getPriceListPrices($product);
             $contractListPrices = $this->getContractListPrices($product);
 
+            $netPrice = $product->getNetPrice();
+
+            if ($user) {
+                foreach ($contractListPrices as $key => $value) {
+                    if ($key == $user->getId()) {
+                        $netPrice = $value;
+                    }
+                }
+            } else if ($priceList) {
+                foreach ($priceListPrices as $key => $value) {
+                    if ($key == $priceList->getId()) {
+                        $netPrice = $value;
+                    }
+                }
+            }
+
             $data['items'][] = [
                 'id' => $product->getId(),
                 'name' => $product->getName(),
                 'description' => $product->getDescription(),
                 'SKU' => $product->getSKU(),
-                'netPrice' => $product->getNetPrice(),
+                'netPrice' => $netPrice,
                 'priceListPrices' => $priceListPrices,
                 'contractListPrices' => $contractListPrices,
                 'published' => $product->isPublished(),
@@ -75,7 +96,7 @@ class ProductController extends AbstractController
     public function showProduct($productId, ProductRepository $repository, ValidatorInterface $validator): JsonResponse
     {
         try {
-            $productId = $this->idValidator($productId, $validator, 'productId');
+            $productId = $this->urlParamValidator($productId, $validator, 'productId');
         } catch (Exception $e) {
             return new JsonResponse(json_decode($e->getMessage(), true), $e->getCode());
         }
@@ -109,7 +130,7 @@ class ProductController extends AbstractController
     public function productsInCategory($categoryId, Request $request, ProductRepository $productRepository, ValidatorInterface $validator): JsonResponse
     {
         try {
-            $categoryId = $this->idValidator($categoryId, $validator, 'categoryId');
+            $categoryId = $this->urlParamValidator($categoryId, $validator, 'categoryId');
         } catch (Exception $e) {
             return new JsonResponse(json_decode($e->getMessage(), true), $e->getCode());
         }
@@ -336,7 +357,8 @@ class ProductController extends AbstractController
         $productPriceListPrices = [];
 
         foreach ($productPriceLists as $list) {
-            $productPriceListPrices[$list->getPriceList()->getName()] = $list->getPrice();
+            // $productPriceListPrices[$list->getPriceList()->getName()] = $list->getPrice();
+            $productPriceListPrices[$list->getPriceList()->getId()] = $list->getPrice();
         }
 
         return $productPriceListPrices;
@@ -348,7 +370,8 @@ class ProductController extends AbstractController
         $contractListPrices = [];
 
         foreach ($contractLists as $list) {
-            $contractListPrices[$list->getUser()->getName() . ' ' . $list->getUser()->getSurname()] = $list->getPrice();
+            // $contractListPrices[$list->getUser()->getName() . ' ' . $list->getUser()->getSurname()] = $list->getPrice();
+            $contractListPrices[$list->getUser()->getId()] = $list->getPrice();
         }
 
         return $contractListPrices;
