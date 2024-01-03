@@ -285,7 +285,15 @@ class ProductController extends AbstractController
 
         foreach ($requestData['products'] as $productData) {
             $vatPercentage = 25;
-            $discountPercentage = 10;
+            $productDiscountPercentage = null;
+
+            if (isset($productData['vat'])) {
+                $vatPercentage = $productData['vat'];
+            }
+
+            if (isset($productData['discount'])) {
+                $productDiscountPercentage = $productData['discount'];
+            }
 
             $productId = $productData['product_id'];
             $product = $productRepository->findOneBy(['id' => $productId]);
@@ -298,7 +306,12 @@ class ProductController extends AbstractController
 
             $netPrice = $this->getContractListPrice($product, $user);
             $vatValue = $netPrice * $vatPercentage / 100;
-            $unitPrice = strval($netPrice + $vatValue);
+            $unitPrice = floatval($netPrice + $vatValue);
+
+            if ($productDiscountPercentage !== null) {
+                $discountedValue = $unitPrice * $productDiscountPercentage / 100;
+                $unitPrice = $unitPrice - $discountedValue;
+            }
 
             $orderProduct = new OrderProduct();
             $orderProduct->setProduct($product);
@@ -306,6 +319,7 @@ class ProductController extends AbstractController
             $orderProduct->setQuantity($quantity);
             $orderProduct->setUnitPrice(strval($unitPrice));
             $orderProduct->setVat($vatPercentage);
+            $orderProduct->setDiscount($productDiscountPercentage);
 
             $this->entityManager->persist($orderProduct);
 
@@ -313,11 +327,13 @@ class ProductController extends AbstractController
         }
 
         if ($totalPrice >= 100) {
-            $discountValue = $totalPrice * $discountPercentage / 100;
-            $discountedPrice = $totalPrice - $discountValue;
+            $orderDiscountPercentage = 10;
+
+            $discountedValue = $totalPrice * $orderDiscountPercentage / 100;
+            $discountedPrice = $totalPrice - $discountedValue;
 
             $order->setTotalPrice(strval($discountedPrice));
-            $order->setDiscount($discountPercentage);
+            $order->setDiscount($orderDiscountPercentage);
         } else {
             $order->setTotalPrice(strval($totalPrice));
         }

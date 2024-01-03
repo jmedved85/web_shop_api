@@ -42,6 +42,11 @@ class OrderProduct
      */
     private $vat;
 
+    /**
+     * @ORM\Column(type="integer", nullable=true)
+     */
+    private $discount;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -103,6 +108,18 @@ class OrderProduct
     public function setVat(?int $vat): self
     {
         $this->vat = $vat;
+
+        return $this;
+    }
+
+    public function getDiscount(): ?int
+    {
+        return $this->discount;
+    }
+
+    public function setDiscount(?int $discount): self
+    {
+        $this->discount = $discount;
 
         return $this;
     }
