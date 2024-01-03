@@ -8,7 +8,6 @@ use App\Entity\City;
 use App\Entity\ContractList;
 use App\Entity\Order;
 use App\Entity\OrderProduct;
-use App\Entity\PriceList;
 use App\Entity\Product;
 use App\Entity\User;
 use App\Repository\ProductRepository;
@@ -42,11 +41,8 @@ class ProductController extends AbstractController
             return new JsonResponse(json_decode($e->getMessage(), true), $e->getCode());
         }
 
-        $user = $this->entityManager->getRepository(User::class)->findOneBy(['id' => $userId]);
-        $priceList = $this->entityManager->getRepository(PriceList::class)->findOneBy(['id' => $priceListId]);
-
-        $paginator = $repository->paginate($page, $pageSize);
-        $totalCount = $repository->getTotalCount();
+        $paginator = $repository->paginate($page, $pageSize, $userId, $priceListId);
+        $totalCount = $repository->getTotalCount($userId, $priceListId);
 
         $data = [
             'items' => [],
@@ -55,25 +51,19 @@ class ProductController extends AbstractController
             'totalItems' =>  $totalCount,
         ];
 
-        foreach ($paginator as $product) {
+        foreach ($paginator as $item) {
+            $product = is_array($item) ? $item[0] : $item;
+
             $categories = $this->getProductCategories($product);
             $priceListPrices = $this->getPriceListPrices($product);
             $contractListPrices = $this->getContractListPrices($product);
 
             $netPrice = $product->getNetPrice();
 
-            if ($user) {
-                foreach ($contractListPrices as $key => $value) {
-                    if ($key == $user->getId()) {
-                        $netPrice = $value;
-                    }
-                }
-            } else if ($priceList) {
-                foreach ($priceListPrices as $key => $value) {
-                    if ($key == $priceList->getId()) {
-                        $netPrice = $value;
-                    }
-                }
+            if ($userId) {
+                $netPrice = $item['contractListPrice'] ?? $netPrice;
+            } else if ($priceListId) {
+                $netPrice = $item['priceListPrice'] ?? $netPrice;
             }
 
             $data['items'][] = [
@@ -89,22 +79,33 @@ class ProductController extends AbstractController
             ];
         }
 
-        return $this->json($data);
+        return new JsonResponse($data);
     }
 
     #[Route('/products/{productId}', name: 'product_show', methods: ['GET'])]
-    public function showProduct($productId, ProductRepository $repository, ValidatorInterface $validator): JsonResponse
+    public function showProduct(Request $request, $productId, ProductRepository $repository, ValidatorInterface $validator): JsonResponse
     {
         try {
             $productId = $this->urlParamValidator($productId, $validator, 'productId');
+            list($userId, $priceListId) = $this->idValidator($request, $validator);
         } catch (Exception $e) {
             return new JsonResponse(json_decode($e->getMessage(), true), $e->getCode());
         }
 
-        $product = $repository->find($productId);
+        $productFind = $repository->findProduct($productId, $userId, $priceListId);
 
-        if (!$product) {
-            return $this->json(['message' => 'Product not found'], 404);
+        if (!$productFind) {
+            return $this->json(['error' => 'Product not found.'], 404);
+        }
+
+        $product = is_array($productFind) ? $productFind[0] : $productFind;
+
+        $netPrice = $product->getNetPrice();
+
+        if ($userId) {
+            $netPrice = $productFind['contractListPrice'] ?? $netPrice;
+        } else if ($priceListId) {
+            $netPrice = $productFind['priceListPrice'] ?? $netPrice;
         }
 
         $categories = $this->getProductCategories($product);
@@ -116,33 +117,29 @@ class ProductController extends AbstractController
             'name' => $product->getName(),
             'description' => $product->getDescription(),
             'SKU' => $product->getSKU(),
-            'netPrice' => $product->getNetPrice(),
+            'netPrice' => $netPrice,
             'priceListPrices' => $priceListPrices,
             'contractListPrices' => $contractListPrices,
             'published' => $product->isPublished(),
             'categories' => $categories
         ];
 
-        return $this->json($data);
+        return new JsonResponse($data);
     }
 
     #[Route('/category/{categoryId}/products', name: 'products_in_category', methods: ['GET'])]
-    public function productsInCategory($categoryId, Request $request, ProductRepository $productRepository, ValidatorInterface $validator): JsonResponse
+    public function productsInCategory(Request $request, $categoryId, ProductRepository $productRepository, ValidatorInterface $validator): JsonResponse
     {
         try {
             $categoryId = $this->urlParamValidator($categoryId, $validator, 'categoryId');
-        } catch (Exception $e) {
-            return new JsonResponse(json_decode($e->getMessage(), true), $e->getCode());
-        }
-
-        try {
             list($page, $pageSize) = $this->pageValidator($request, $validator);
+            list($userId, $priceListId) = $this->idValidator($request, $validator);
         } catch (Exception $e) {
             return new JsonResponse(json_decode($e->getMessage(), true), $e->getCode());
         }
 
-        $paginator = $productRepository->paginateByCategory($categoryId, $page, $pageSize);
-        $totalCount = $productRepository->getTotalCountInCategory($categoryId);
+        $paginator = $productRepository->paginateByCategory($categoryId, $page, $pageSize, $userId, $priceListId);
+        $totalCount = $productRepository->getTotalCountInCategory($categoryId, $userId, $priceListId);
 
         $data = [
             'items' => [],
@@ -151,21 +148,31 @@ class ProductController extends AbstractController
             'totalItems' =>  $totalCount,
         ];
 
-        foreach ($paginator as $product) {
+        foreach ($paginator as $item) {
+            $product = is_array($item) ? $item[0] : $item;
+
             $categories = $this->getProductCategories($product);
+
+            $netPrice = $product->getNetPrice();
+
+            if ($userId) {
+                $netPrice = $item['contractListPrice'] ?? $netPrice;
+            } else if ($priceListId) {
+                $netPrice = $item['priceListPrice'] ?? $netPrice;
+            }
 
             $data['items'][] = [
                 'id' => $product->getId(),
                 'name' => $product->getName(),
                 'description' => $product->getDescription(),
                 'SKU' => $product->getSKU(),
-                'netPrice' => $product->getNetPrice(),
+                'netPrice' => $netPrice,
                 'published' => $product->isPublished(),
                 'categories' => $categories,
             ];
         }
 
-        return $this->json($data);
+        return new JsonResponse($data);
     }
 
     #[Route('/filtered-products', name: 'filtered_products', methods: ['GET'])]
@@ -173,13 +180,9 @@ class ProductController extends AbstractController
     {
         try {
             list($page, $pageSize) = $this->pageValidator($request, $validator);
-        } catch (Exception $e) {
-            return new JsonResponse(json_decode($e->getMessage(), true), $e->getCode());
-        }
-
-        try {
             list($sortBy, $sortOrder, $filterByName, $filterByCategory, $filterByMaxPrice, $filterByMinPrice) 
                 = $this->productFilterValidator($request, $validator);
+            list($userId, $priceListId) = $this->idValidator($request, $validator);
         } catch (Exception $e) {
             return new JsonResponse(json_decode($e->getMessage(), true), $e->getCode());
         }
@@ -192,7 +195,9 @@ class ProductController extends AbstractController
             $filterByName,
             $filterByCategory,
             $filterByMaxPrice,
-            $filterByMinPrice
+            $filterByMinPrice,
+            $userId,
+            $priceListId
         );
 
         $totalCount = $productRepository->getTotalFilteredCount(
@@ -200,6 +205,8 @@ class ProductController extends AbstractController
             $filterByCategory,
             $filterByMaxPrice,
             $filterByMinPrice,
+            $userId,
+            $priceListId
         );
 
         $data = [
@@ -209,17 +216,27 @@ class ProductController extends AbstractController
             'totalItems' =>  $totalCount,
         ];
 
-        foreach ($paginator as $product) {
+        foreach ($paginator as $item) {
+            $product = is_array($item) ? $item[0] : $item;
+
             $categories = $this->getProductCategories($product);
             $priceListPrices = $this->getPriceListPrices($product);
             $contractListPrices = $this->getContractListPrices($product);
+
+            $netPrice = $product->getNetPrice();
+
+            if ($userId) {
+                $netPrice = $item['contractListPrice'] ?? $netPrice;
+            } else if ($priceListId) {
+                $netPrice = $item['priceListPrice'] ?? $netPrice;
+            }
 
             $data['items'][] = [
                 'id' => $product->getId(),
                 'name' => $product->getName(),
                 'description' => $product->getDescription(),
                 'SKU' => $product->getSKU(),
-                'netPrice' => $product->getNetPrice(),
+                'netPrice' => $netPrice,
                 'priceListPrices' => $priceListPrices,
                 'contractListPrices' => $contractListPrices,
                 'published' => $product->isPublished(),
@@ -227,7 +244,7 @@ class ProductController extends AbstractController
             ];
         }
 
-        return $this->json($data);
+        return new JsonResponse($data);
     }
 
     #[Route('/orders/new', name: 'create_order', methods: ['POST'])]
@@ -308,7 +325,9 @@ class ProductController extends AbstractController
         $this->entityManager->persist($order);
         $this->entityManager->flush();
 
-        return $this->json(['message' => 'Order created successfully'], 201);
+        $responseData = ['message' => 'Order created successfully'];
+
+        return new JsonResponse($responseData, 201);
     }
 
     private function getProductCategories(object $product): ?array

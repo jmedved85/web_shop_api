@@ -59,7 +59,7 @@ trait ValidatorTrait
         $userId = $request->query->get('userId');
         $priceListId = $request->query->get('priceListId');
 
-        if (!is_numeric($userId)) {
+        if (!is_numeric($userId) && $userId !== null) {
             $violations = $validator->validate($userId, [
                 new Assert\NotBlank(),
                 new Assert\Type(['type' => 'integer', 'message' => 'Value must be an integer.']),
@@ -72,7 +72,7 @@ trait ValidatorTrait
             }
         }
 
-        if (!is_numeric($priceListId)) {
+        if (!is_numeric($priceListId) && $priceListId !== null) {
             $violations = $validator->validate($userId, [
                 new Assert\NotBlank(),
                 new Assert\Type(['type' => 'integer', 'message' => 'Value must be an integer.']),
@@ -83,6 +83,10 @@ trait ValidatorTrait
                     $errors['priceListId'][] = $violation->getMessage();
                 }
             }
+        }
+
+        if (!empty($errors)) {
+            throw new Exception(json_encode(['errors' => $errors]), 400);
         }
 
         return [(int)$userId, (int)$priceListId];

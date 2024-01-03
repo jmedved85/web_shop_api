@@ -4,6 +4,8 @@ namespace App\Repository;
 
 use App\Entity\Product;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\NonUniqueResultException;
+use Doctrine\ORM\NoResultException;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -39,26 +41,94 @@ class ProductRepository extends ServiceEntityRepository
         }
     }
 
-    public function paginate($page, $pageSize)
+    public function paginate(int $page, int $pageSize, ?int $userId = null, ?int $priceListId = null)
     {
-        $qb = $this->createQueryBuilder('p')
+        $qb = $this->createQueryBuilder('p');
+
+        if ($userId) {
+            $qb 
+                ->join('p.contractLists', 'cl')
+                ->addSelect('cl.price AS contractListPrice')
+                ->andWhere('cl.user = :userId')
+                ->setParameter('userId', $userId)
+            ;
+        } else if ($priceListId) {
+            $qb 
+                ->join('p.productPriceLists', 'ppl')
+                ->addSelect('ppl.price AS priceListPrice')
+                ->andWhere('ppl.priceList = :priceListId')
+                ->setParameter('priceListId', $priceListId)
+            ;
+        }
+
+        $qb
             ->setMaxResults($pageSize)
             ->setFirstResult(($page - 1) * $pageSize)
         ;
 
-        return $qb->getQuery()->getResult();
+        $result = $qb->getQuery()->getResult();
+
+        return $result;
     }
 
-    public function getTotalCount(): int
+    public function findProduct(int $productId, ?int $userId = null, ?int $priceListId = null)
     {
-        return $this->createQueryBuilder('p')
-            ->select('COUNT(p.id)')
-            ->getQuery()
-            ->getSingleScalarResult()
+        $qb = $this->createQueryBuilder('p')
+            ->andWhere('p.id = :productId')
+            ->setParameter('productId', $productId)
         ;
+
+        if ($userId) {
+            $qb 
+                ->join('p.contractLists', 'cl')
+                ->addSelect('cl.price AS contractListPrice')
+                ->andWhere('cl.user = :userId')
+                ->setParameter('userId', $userId)
+            ;
+        } elseif ($priceListId) {
+            $qb 
+                ->join('p.productPriceLists', 'ppl')
+                ->addSelect('ppl.price AS priceListPrice')
+                ->andWhere('ppl.priceList = :priceListId')
+                ->setParameter('priceListId', $priceListId)
+            ;
+        }
+
+        try {
+            $result = $qb->getQuery()->getSingleResult();
+        } catch (NoResultException | NonUniqueResultException $e) {
+            $result = null;
+        }
+
+        return $result;
     }
 
-    public function paginateByCategory(int $categoryId, int $page, int $pageSize)
+    public function getTotalCount(?int $userId = null, ?int $priceListId = null): int
+    {
+        $qb = $this->createQueryBuilder('p')
+            ->select('COUNT(p.id)')
+        ;
+
+        if ($userId) {
+            $qb 
+                ->join('p.contractLists', 'cl')
+                ->andWhere('cl.user = :userId')
+                ->setParameter('userId', $userId)
+            ;
+        } elseif ($priceListId) {
+            $qb 
+                ->join('p.productPriceLists', 'ppl')
+                ->andWhere('ppl.priceList = :priceListId')
+                ->setParameter('priceListId', $priceListId)
+            ;
+        }
+
+        $result = $qb->getQuery()->getSingleScalarResult();
+
+        return $result;
+    }
+
+    public function paginateByCategory(int $categoryId, int $page, int $pageSize, ?int $userId = null, ?int $priceListId = null)
     {
         $qb = $this->createQueryBuilder('p')
             ->join('p.productCategories', 'pc')
@@ -68,10 +138,33 @@ class ProductRepository extends ServiceEntityRepository
             ->setFirstResult(($page - 1) * $pageSize)
         ;
 
-        return $qb->getQuery()->getResult();
+        if ($userId) {
+            $qb 
+                ->join('p.contractLists', 'cl')
+                ->addSelect('cl.price AS contractListPrice')
+                ->andWhere('cl.user = :userId')
+                ->setParameter('userId', $userId)
+            ;
+        } else if ($priceListId) {
+            $qb 
+                ->join('p.productPriceLists', 'ppl')
+                ->addSelect('ppl.price AS priceListPrice')
+                ->andWhere('ppl.priceList = :priceListId')
+                ->setParameter('priceListId', $priceListId)
+            ;
+        }
+
+        $qb
+            ->setMaxResults($pageSize)
+            ->setFirstResult(($page - 1) * $pageSize)
+        ;
+
+        $result = $qb->getQuery()->getResult();
+
+        return $result;
     }
 
-    public function getTotalCountInCategory(int $categoryId): ?int
+    public function getTotalCountInCategory(int $categoryId, ?int $userId = null, ?int $priceListId = null): ?int
     {
         $qb = $this->createQueryBuilder('p')
             ->select('COUNT(DISTINCT p.id) as total')
@@ -79,8 +172,24 @@ class ProductRepository extends ServiceEntityRepository
             ->andWhere('pc.category = :categoryId')
             ->setParameter('categoryId', $categoryId)
         ;
-    
-        return (int) $qb->getQuery()->getSingleScalarResult();
+
+        if ($userId) {
+            $qb 
+                ->join('p.contractLists', 'cl')
+                ->andWhere('cl.user = :userId')
+                ->setParameter('userId', $userId)
+            ;
+        } elseif ($priceListId) {
+            $qb 
+                ->join('p.productPriceLists', 'ppl')
+                ->andWhere('ppl.priceList = :priceListId')
+                ->setParameter('priceListId', $priceListId)
+            ;
+        }
+
+        $result = $qb->getQuery()->getSingleScalarResult();
+
+        return $result;
     }
 
     public function filterAndSortProducts(
@@ -91,7 +200,9 @@ class ProductRepository extends ServiceEntityRepository
         ?string $filterByName = null,
         ?string $filterByCategory = null,
         ?string $filterByMaxPrice = null,
-        ?string $filterByMinPrice = null
+        ?string $filterByMinPrice = null,
+        ?int $userId = null,
+        ?int $priceListId = null
     ): array 
     {
 
@@ -128,6 +239,22 @@ class ProductRepository extends ServiceEntityRepository
             ;
         }
 
+        if ($userId) {
+            $qb 
+                ->join('p.contractLists', 'cl')
+                ->addSelect('cl.price AS contractListPrice')
+                ->andWhere('cl.user = :userId')
+                ->setParameter('userId', $userId)
+            ;
+        } elseif ($priceListId) {
+            $qb 
+                ->join('p.productPriceLists', 'ppl')
+                ->addSelect('ppl.price AS priceListPrice')
+                ->andWhere('ppl.priceList = :priceListId')
+                ->setParameter('priceListId', $priceListId)
+            ;
+        }
+
         $result = $qb->getQuery()->getResult();
 
         return $result;
@@ -137,7 +264,9 @@ class ProductRepository extends ServiceEntityRepository
         ?string $filterByName = null,
         ?string $filterByCategory = null,
         ?string $filterByMaxPrice = null,
-        ?string $filterByMinPrice = null
+        ?string $filterByMinPrice = null,
+        ?int $userId = null,
+        ?int $priceListId = null
     ): int 
     {
         $qb = $this->createQueryBuilder('p')
@@ -168,6 +297,20 @@ class ProductRepository extends ServiceEntityRepository
         if ($filterByMinPrice) {
             $qb->andWhere('p.netPrice >= :minPrice')
                 ->setParameter('minPrice', floatval($filterByMinPrice))
+            ;
+        }
+
+        if ($userId) {
+            $qb 
+                ->join('p.contractLists', 'cl')
+                ->andWhere('cl.user = :userId')
+                ->setParameter('userId', $userId)
+            ;
+        } elseif ($priceListId) {
+            $qb 
+                ->join('p.productPriceLists', 'ppl')
+                ->andWhere('ppl.priceList = :priceListId')
+                ->setParameter('priceListId', $priceListId)
             ;
         }
 
