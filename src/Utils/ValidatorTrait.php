@@ -19,10 +19,10 @@ trait ValidatorTrait
         $page = $request->query->get('page', 1);
         $pageSize = $request->query->get('pageSize', 10);
 
-        if (!is_numeric($page)) {
+        if (!is_numeric($page) || $page == '0') {
             $violations = $validator->validate($page, [
                 new Assert\NotBlank(),
-                new Assert\Type(['type' => 'integer', 'message' => 'Value must be an integer.']),
+                new Assert\Type(['type' => 'integer', 'message' => 'Value must be an integer and must be positive.']),
             ]);
     
             if (count($violations) > 0) {
@@ -32,10 +32,10 @@ trait ValidatorTrait
             }
         }
 
-        if (!is_numeric($pageSize)) {
+        if (!is_numeric($pageSize) || $pageSize == '0') {
             $violations = $validator->validate($pageSize, [
                 new Assert\NotBlank(),
-                new Assert\Type(['type' => 'integer', 'message' => 'Value must be an integer.']),
+                new Assert\Type(['type' => 'integer', 'message' => 'Value must be an integer and must be positive.']),
             ]);
     
             if (count($violations) > 0) {
@@ -59,10 +59,10 @@ trait ValidatorTrait
         $userId = $request->query->get('userId');
         $priceListId = $request->query->get('priceListId');
 
-        if (!is_numeric($userId) && $userId !== null) {
+        if ((!is_numeric($userId) && $userId !== null) || $userId == '0') {
             $violations = $validator->validate($userId, [
                 new Assert\NotBlank(),
-                new Assert\Type(['type' => 'integer', 'message' => 'Value must be an integer.']),
+                new Assert\Type(['type' => 'integer', 'message' => 'Value must be an integer and must be positive.']),
             ]);
     
             if (count($violations) > 0) {
@@ -72,10 +72,10 @@ trait ValidatorTrait
             }
         }
 
-        if (!is_numeric($priceListId) && $priceListId !== null) {
-            $violations = $validator->validate($userId, [
+        if ((!is_numeric($priceListId) && $priceListId !== null) || $priceListId == '0') {
+            $violations = $validator->validate($priceListId, [
                 new Assert\NotBlank(),
-                new Assert\Type(['type' => 'integer', 'message' => 'Value must be an integer.']),
+                new Assert\Type(['type' => 'integer', 'message' => 'Value must be an integer and must be positive.']),
             ]);
     
             if (count($violations) > 0) {
@@ -89,17 +89,17 @@ trait ValidatorTrait
             throw new Exception(json_encode(['errors' => $errors]), 400);
         }
 
-        return [(int)$userId, (int)$priceListId];
+        return [$userId ? (int)$userId : null, $priceListId ? (int)$priceListId : null];
     }
 
     private function urlParamValidator(string $value, ValidatorInterface $validator, string $key = ''): ?int
     {
         $errors = [];
 
-        if (!is_numeric($value)) {
+        if (!is_numeric($value) || $value == '0') {
             $violations = $validator->validate($value, [
                 new Assert\NotBlank(),
-                new Assert\Type(['type' => 'integer', 'message' => 'Value must be an integer.']),
+                new Assert\Type(['type' => 'integer', 'message' => 'Value must be an integer and must be positive.']),
             ]);
     
             if (count($violations) > 0) {
@@ -113,7 +113,7 @@ trait ValidatorTrait
             }
         }
 
-        return (int)$value;
+        return $value ? (int)$value : null;
     }
 
     private function productFilterValidator(Request $request, ValidatorInterface $validator): ?array

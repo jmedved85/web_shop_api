@@ -71,7 +71,7 @@ class ProductRepository extends ServiceEntityRepository
         return $result;
     }
 
-    public function findProduct(int $productId, ?int $userId = null, ?int $priceListId = null): ?array
+    public function findProduct(int $productId, ?int $userId = null, ?int $priceListId = null): ?Product
     {
         $qb = $this->createQueryBuilder('p')
             ->andWhere('p.id = :productId')
