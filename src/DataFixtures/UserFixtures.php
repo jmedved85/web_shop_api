@@ -14,14 +14,14 @@ class UserFixtures extends Fixture
 {
     use FixturesTrait;
 
-    private $entityManager;
+    private EntityManagerInterface $entityManager;
 
     public function __construct(EntityManagerInterface $entityManager)
     {
         $this->entityManager = $entityManager;
     }
 
-    public function load(ObjectManager $manager)
+    public function load(ObjectManager $manager): void
     {
         // Truncate 'user' table to reset auto-increment ID values
         $this->truncateTable(User::class);
@@ -37,7 +37,7 @@ class UserFixtures extends Fixture
                 ->setSurname('Surname ' . $i)
                 ->setEmail('user' . $i . '@net.com')
                 ->setPhone('123456789' . $i)
-                ->setAddress('Street' . $i)
+                ->setAddress('Street ' . $i)
                 ->setCity($randomCity)
             ;
 

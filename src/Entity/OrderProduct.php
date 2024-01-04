@@ -52,6 +52,13 @@ class OrderProduct
         return $this->id;
     }
 
+    public function setId(int $id): self
+    {
+        $this->id = $id;
+
+        return $this;
+    }
+
     public function getOrder(): ?Order
     {
         return $this->order;

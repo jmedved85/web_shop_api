@@ -16,14 +16,14 @@ class ProductPriceListFixtures extends Fixture implements DependentFixtureInterf
 {
     use FixturesTrait;
 
-    private $entityManager;
+    private EntityManagerInterface $entityManager;
 
     public function __construct(EntityManagerInterface $entityManager)
     {
         $this->entityManager = $entityManager;
     }
 
-    public function load(ObjectManager $manager)
+    public function load(ObjectManager $manager): void
     {
         // Truncate 'product_price_list' table to reset auto-increment ID values
         $this->truncateTable(ProductPriceList::class);
@@ -57,12 +57,12 @@ class ProductPriceListFixtures extends Fixture implements DependentFixtureInterf
     {
         if ($isIncreasedPrice) {
             // Hardcoded increase of 10%
-            $differentPrice = $netPrice * 1.1;
+            $differentPrice = floatval($netPrice) * 1.1;
 
             return strval($differentPrice);
         } else if ($isIncreasedPrice == false) {
            // Hardcoded decrease of 10%
-           $differentPrice = $netPrice * 0.9;
+           $differentPrice = floatval($netPrice) * 0.9;
 
            return strval($differentPrice);
         }

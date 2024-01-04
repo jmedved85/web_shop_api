@@ -6,7 +6,7 @@ namespace App\DataFixtures;
 
 trait FixturesTrait
 {
-    private function truncateTable($entityClass)
+    private function truncateTable(string $entityClass): void
     {
         $connection = $this->entityManager->getConnection();
 

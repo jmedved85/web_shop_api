@@ -92,7 +92,7 @@ trait ValidatorTrait
         return [(int)$userId, (int)$priceListId];
     }
 
-    private function urlParamValidator($value, ValidatorInterface $validator, string $key = ''): ?int
+    private function urlParamValidator(string $value, ValidatorInterface $validator, string $key = ''): ?int
     {
         $errors = [];
 

@@ -11,3 +11,7 @@
 /migrations/
 .vscode/launch.json
 ###< symfony/framework-bundle ###
+
+###> phpstan/phpstan ###
+phpstan.neon
+###< phpstan/phpstan ###

@@ -16,14 +16,14 @@ class ProductCategoryFixtures extends Fixture implements DependentFixtureInterfa
 {
     use FixturesTrait;
 
-    private $entityManager;
+    private EntityManagerInterface $entityManager;
 
     public function __construct(EntityManagerInterface $entityManager)
     {
         $this->entityManager = $entityManager;
     }
 
-    public function load(ObjectManager $manager)
+    public function load(ObjectManager $manager): void
     {
         // Truncate 'product_category' table to reset auto-increment ID values
         $this->truncateTable(ProductCategory::class);

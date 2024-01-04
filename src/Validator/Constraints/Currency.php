@@ -11,5 +11,5 @@ use Symfony\Component\Validator\Constraint;
  */
 class Currency extends Constraint
 {
-    public $message = 'The value \'{{ value }}\' is not a valid currency format.';
+    public string $message = 'The value \'{{ value }}\' is not a valid currency format.';
 }

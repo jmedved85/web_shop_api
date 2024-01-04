@@ -37,6 +37,13 @@ class ProductPriceList
         return $this->id;
     }
 
+    public function setId(int $id): self
+    {
+        $this->id = $id;
+
+        return $this;
+    }
+
     public function getProduct(): ?Product
     {
         return $this->product;

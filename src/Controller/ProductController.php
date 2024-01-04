@@ -24,7 +24,7 @@ class ProductController extends AbstractController
 {
     use ValidatorTrait;
 
-    private $entityManager;
+    private EntityManagerInterface $entityManager;
 
     public function __construct(EntityManagerInterface $entityManager)
     {
@@ -83,7 +83,7 @@ class ProductController extends AbstractController
     }
 
     #[Route('/products/{productId}', name: 'product_show', methods: ['GET'])]
-    public function showProduct(Request $request, $productId, ProductRepository $repository, ValidatorInterface $validator): JsonResponse
+    public function showProduct(Request $request, string $productId, ProductRepository $repository, ValidatorInterface $validator): JsonResponse
     {
         try {
             $productId = $this->urlParamValidator($productId, $validator, 'productId');
@@ -128,7 +128,7 @@ class ProductController extends AbstractController
     }
 
     #[Route('/category/{categoryId}/products', name: 'products_in_category', methods: ['GET'])]
-    public function productsInCategory(Request $request, $categoryId, ProductRepository $productRepository, ValidatorInterface $validator): JsonResponse
+    public function productsInCategory(Request $request, string $categoryId, ProductRepository $productRepository, ValidatorInterface $validator): JsonResponse
     {
         try {
             $categoryId = $this->urlParamValidator($categoryId, $validator, 'categoryId');
@@ -304,7 +304,7 @@ class ProductController extends AbstractController
 
             $quantity = $productData['quantity'];
 
-            $netPrice = $this->getContractListPrice($product, $user);
+            $netPrice = floatval($this->getContractListPrice($product, $user));
             $vatValue = $netPrice * $vatPercentage / 100;
             $unitPrice = floatval($netPrice + $vatValue);
 
@@ -346,7 +346,7 @@ class ProductController extends AbstractController
         return new JsonResponse($responseData, 201);
     }
 
-    private function getProductCategories(object $product): ?array
+    private function getProductCategories(object $product): array
     {
         $categories = [];
 

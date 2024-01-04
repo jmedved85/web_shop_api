@@ -14,14 +14,14 @@ class CategoryFixtures extends Fixture
 {
     use FixturesTrait;
 
-    private $entityManager;
+    private EntityManagerInterface $entityManager;
 
     public function __construct(EntityManagerInterface $entityManager)
     {
         $this->entityManager = $entityManager;
     }
 
-    public function load(ObjectManager $manager)
+    public function load(ObjectManager $manager): void
     {
         // Truncate 'category' & 'main_category' tables to reset auto-increment ID values
         $this->truncateTable(Category::class);

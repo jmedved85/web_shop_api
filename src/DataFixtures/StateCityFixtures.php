@@ -14,14 +14,14 @@ class StateCityFixtures extends Fixture
 {
     use FixturesTrait;
 
-    private $entityManager;
+    private EntityManagerInterface $entityManager;
 
     public function __construct(EntityManagerInterface $entityManager)
     {
         $this->entityManager = $entityManager;
     }
 
-    public function load(ObjectManager $manager)
+    public function load(ObjectManager $manager): void
     {
         // Truncate 'city' and 'state' tables to reset auto-increment ID values
         $this->truncateTable(City::class);

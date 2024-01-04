@@ -13,14 +13,14 @@ class PriceListFixtures extends Fixture
 {
     use FixturesTrait;
 
-    private $entityManager;
+    private EntityManagerInterface $entityManager;
 
     public function __construct(EntityManagerInterface $entityManager)
     {
         $this->entityManager = $entityManager;
     }
 
-    public function load(ObjectManager $manager)
+    public function load(ObjectManager $manager): void
     {
         // Truncate 'price_list' table to reset auto-increment ID values
         $this->truncateTable(PriceList::class);

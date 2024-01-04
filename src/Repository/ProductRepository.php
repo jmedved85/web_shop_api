@@ -41,7 +41,7 @@ class ProductRepository extends ServiceEntityRepository
         }
     }
 
-    public function paginate(int $page, int $pageSize, ?int $userId = null, ?int $priceListId = null)
+    public function paginate(int $page, int $pageSize, ?int $userId = null, ?int $priceListId = null): array
     {
         $qb = $this->createQueryBuilder('p');
 
@@ -71,7 +71,7 @@ class ProductRepository extends ServiceEntityRepository
         return $result;
     }
 
-    public function findProduct(int $productId, ?int $userId = null, ?int $priceListId = null)
+    public function findProduct(int $productId, ?int $userId = null, ?int $priceListId = null): ?array
     {
         $qb = $this->createQueryBuilder('p')
             ->andWhere('p.id = :productId')
@@ -128,7 +128,7 @@ class ProductRepository extends ServiceEntityRepository
         return $result;
     }
 
-    public function paginateByCategory(int $categoryId, int $page, int $pageSize, ?int $userId = null, ?int $priceListId = null)
+    public function paginateByCategory(int $categoryId, int $page, int $pageSize, ?int $userId = null, ?int $priceListId = null): array
     {
         $qb = $this->createQueryBuilder('p')
             ->join('p.productCategories', 'pc')
