@@ -24,7 +24,7 @@ trait ValidatorTrait
                 new Assert\NotBlank(),
                 new Assert\Type(['type' => 'integer', 'message' => 'Value must be an integer and must be positive.']),
             ]);
-    
+
             if (count($violations) > 0) {
                 foreach ($violations as $violation) {
                     $errors['page'][] = $violation->getMessage();
@@ -37,7 +37,7 @@ trait ValidatorTrait
                 new Assert\NotBlank(),
                 new Assert\Type(['type' => 'integer', 'message' => 'Value must be an integer and must be positive.']),
             ]);
-    
+
             if (count($violations) > 0) {
                 foreach ($violations as $violation) {
                     $errors['pageSize'][] = $violation->getMessage();
@@ -64,7 +64,7 @@ trait ValidatorTrait
                 new Assert\NotBlank(),
                 new Assert\Type(['type' => 'integer', 'message' => 'Value must be an integer and must be positive.']),
             ]);
-    
+
             if (count($violations) > 0) {
                 foreach ($violations as $violation) {
                     $errors['userId'][] = $violation->getMessage();
@@ -77,7 +77,7 @@ trait ValidatorTrait
                 new Assert\NotBlank(),
                 new Assert\Type(['type' => 'integer', 'message' => 'Value must be an integer and must be positive.']),
             ]);
-    
+
             if (count($violations) > 0) {
                 foreach ($violations as $violation) {
                     $errors['priceListId'][] = $violation->getMessage();
@@ -101,7 +101,7 @@ trait ValidatorTrait
                 new Assert\NotBlank(),
                 new Assert\Type(['type' => 'integer', 'message' => 'Value must be an integer and must be positive.']),
             ]);
-    
+
             if (count($violations) > 0) {
                 foreach ($violations as $violation) {
                     $errors[$key][] = $violation->getMessage();
@@ -141,13 +141,13 @@ trait ValidatorTrait
         }
 
         /* 'maxPrice' & 'minPrice' validations */
-        if ($filterByMaxPrice) {
+        if (!is_numeric($filterByMaxPrice)) {
             $violations = $validator->validate($filterByMaxPrice, [
                 new Assert\NotBlank(),
                 new Assert\PositiveOrZero(),
                 new CustomAssert\Currency()
             ]);
-    
+
             if (count($violations) > 0) {
                 foreach ($violations as $violation) {
                     $errors['maxPrice'][] = $violation->getMessage();
@@ -155,13 +155,13 @@ trait ValidatorTrait
             }
         }
 
-        if ($filterByMinPrice) {
+        if (!is_numeric($filterByMinPrice)) {
             $violations = $validator->validate($filterByMinPrice, [
                 new Assert\NotBlank(),
                 new Assert\PositiveOrZero(),
                 new CustomAssert\Currency()
             ]);
-    
+
             if (count($violations) > 0) {
                 foreach ($violations as $violation) {
                     $errors['minPrice'][] = $violation->getMessage();

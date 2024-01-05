@@ -71,7 +71,10 @@ class ProductRepository extends ServiceEntityRepository
         return $result;
     }
 
-    public function findProduct(int $productId, ?int $userId = null, ?int $priceListId = null): ?Product
+    /**
+     * @return object|array|null
+     */
+    public function findProduct(int $productId, ?int $userId = null, ?int $priceListId = null)
     {
         $qb = $this->createQueryBuilder('p')
             ->andWhere('p.id = :productId')
@@ -134,8 +137,6 @@ class ProductRepository extends ServiceEntityRepository
             ->join('p.productCategories', 'pc')
             ->andWhere('pc.category = :categoryId')
             ->setParameter('categoryId', $categoryId)
-            ->setMaxResults($pageSize)
-            ->setFirstResult(($page - 1) * $pageSize)
         ;
 
         if ($userId) {
