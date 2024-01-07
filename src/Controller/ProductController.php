@@ -17,26 +17,25 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
-use App\Utils\ValidatorTrait;
+use App\Validator\ProductValidator;
 
 class ProductController extends AbstractController
 {
-    use ValidatorTrait;
-
     private EntityManagerInterface $entityManager;
+    private ProductValidator $productValidator;
 
-    public function __construct(EntityManagerInterface $entityManager)
+    public function __construct(EntityManagerInterface $entityManager, ProductValidator $productValidator)
     {
         $this->entityManager = $entityManager;
+        $this->productValidator = $productValidator;
     }
 
     #[Route('/products', name: 'products_list', methods: ['GET'])]
-    public function products(Request $request, ProductRepository $repository, ValidatorInterface $validator): JsonResponse
+    public function products(Request $request, ProductRepository $repository): JsonResponse
     {
         try {
-            list($page, $pageSize) = $this->pageValidator($request, $validator);
-            list($userId, $priceListId) = $this->idValidator($request, $validator);
+            list($page, $pageSize) = $this->productValidator->pageValidator($request);
+            list($userId, $priceListId) = $this->productValidator->idValidator($request);
         } catch (Exception $e) {
             return new JsonResponse(json_decode($e->getMessage(), true), $e->getCode());
         }
@@ -52,11 +51,7 @@ class ProductController extends AbstractController
         ];
 
         foreach ($paginator as $item) {
-            $product = is_array($item) ? $item[0] : $item;
-
-            $categories = $this->getProductCategories($product);
-            $priceListPrices = $this->getPriceListPrices($product);
-            $contractListPrices = $this->getContractListPrices($product);
+            $product = $item instanceof Product ? $item : $item[0];
 
             $netPrice = $product->getNetPrice();
 
@@ -65,6 +60,11 @@ class ProductController extends AbstractController
             } else if ($priceListId) {
                 $netPrice = $item['priceListPrice'] ?? $netPrice;
             }
+
+            /* Fetch all categories, price list & contract list prices for the product */
+            $categories = $this->getProductCategories($product);
+            $priceListPrices = $this->getPriceListPrices($product);
+            $contractListPrices = $this->getContractListPrices($product);
 
             $data['items'][] = [
                 'id' => $product->getId(),
@@ -83,11 +83,11 @@ class ProductController extends AbstractController
     }
 
     #[Route('/products/{productId}', name: 'product_show', methods: ['GET'])]
-    public function showProduct(Request $request, string $productId, ProductRepository $repository, ValidatorInterface $validator): JsonResponse
+    public function showProduct(Request $request, string $productId, ProductRepository $repository): JsonResponse
     {
         try {
-            $productId = $this->urlParamValidator($productId, $validator, 'productId');
-            list($userId, $priceListId) = $this->idValidator($request, $validator);
+            $productId = $this->productValidator->urlParamValidator($productId, 'productId');
+            list($userId, $priceListId) = $this->productValidator->idValidator($request);
         } catch (Exception $e) {
             return new JsonResponse(json_decode($e->getMessage(), true), $e->getCode());
         }
@@ -98,7 +98,7 @@ class ProductController extends AbstractController
             return $this->json(['error' => 'Product not found.'], 404);
         }
 
-        $product = is_array($productFind) ? $productFind[0] : $productFind;
+        $product = $productFind instanceof Product ? $productFind : $productFind[0];
 
         $netPrice = $product->getNetPrice();
 
@@ -108,6 +108,7 @@ class ProductController extends AbstractController
             $netPrice = $productFind['priceListPrice'] ?? $netPrice;
         }
 
+        /* Fetch all categories, price list & contract list prices for the product */
         $categories = $this->getProductCategories($product);
         $priceListPrices = $this->getPriceListPrices($product);
         $contractListPrices = $this->getContractListPrices($product);
@@ -128,12 +129,12 @@ class ProductController extends AbstractController
     }
 
     #[Route('/category/{categoryId}/products', name: 'products_in_category', methods: ['GET'])]
-    public function productsInCategory(Request $request, string $categoryId, ProductRepository $productRepository, ValidatorInterface $validator): JsonResponse
+    public function productsInCategory(Request $request, string $categoryId, ProductRepository $productRepository): JsonResponse
     {
         try {
-            $categoryId = $this->urlParamValidator($categoryId, $validator, 'categoryId');
-            list($page, $pageSize) = $this->pageValidator($request, $validator);
-            list($userId, $priceListId) = $this->idValidator($request, $validator);
+            $categoryId = $this->productValidator->urlParamValidator($categoryId, 'categoryId');
+            list($page, $pageSize) = $this->productValidator->pageValidator($request);
+            list($userId, $priceListId) = $this->productValidator->idValidator($request);
         } catch (Exception $e) {
             return new JsonResponse(json_decode($e->getMessage(), true), $e->getCode());
         }
@@ -149,7 +150,7 @@ class ProductController extends AbstractController
         ];
 
         foreach ($paginator as $item) {
-            $product = is_array($item) ? $item[0] : $item;
+            $product = $item instanceof Product ? $item : $item[0];
 
             $categories = $this->getProductCategories($product);
 
@@ -176,13 +177,13 @@ class ProductController extends AbstractController
     }
 
     #[Route('/filtered-products', name: 'filtered_products', methods: ['GET'])]
-    public function filteredProducts(Request $request, ProductRepository $productRepository, ValidatorInterface $validator): JsonResponse
+    public function filteredProducts(Request $request, ProductRepository $productRepository): JsonResponse
     {
         try {
-            list($page, $pageSize) = $this->pageValidator($request, $validator);
+            list($page, $pageSize) = $this->productValidator->pageValidator($request);
             list($sortBy, $sortOrder, $filterByName, $filterByCategory, $filterByMaxPrice, $filterByMinPrice) 
-                = $this->productFilterValidator($request, $validator);
-            list($userId, $priceListId) = $this->idValidator($request, $validator);
+                = $this->productValidator->productFilterValidator($request);
+            list($userId, $priceListId) = $this->productValidator->idValidator($request);
         } catch (Exception $e) {
             return new JsonResponse(json_decode($e->getMessage(), true), $e->getCode());
         }
@@ -217,11 +218,7 @@ class ProductController extends AbstractController
         ];
 
         foreach ($paginator as $item) {
-            $product = is_array($item) ? $item[0] : $item;
-
-            $categories = $this->getProductCategories($product);
-            $priceListPrices = $this->getPriceListPrices($product);
-            $contractListPrices = $this->getContractListPrices($product);
+            $product = $item instanceof Product ? $item : $item[0];
 
             $netPrice = $product->getNetPrice();
 
@@ -230,6 +227,11 @@ class ProductController extends AbstractController
             } else if ($priceListId) {
                 $netPrice = $item['priceListPrice'] ?? $netPrice;
             }
+
+            /* Fetch all categories, price list & contract list prices for the product */
+            $categories = $this->getProductCategories($product);
+            $priceListPrices = $this->getPriceListPrices($product);
+            $contractListPrices = $this->getContractListPrices($product);
 
             $data['items'][] = [
                 'id' => $product->getId(),
@@ -248,7 +250,7 @@ class ProductController extends AbstractController
     }
 
     #[Route('/orders/new', name: 'create_order', methods: ['POST'])]
-    public function createOrder(Request $request, ProductRepository $productRepository, ValidatorInterface $validator): JsonResponse
+    public function createOrder(Request $request, ProductRepository $productRepository): JsonResponse
     {
         $requestData = json_decode($request->getContent(), true);
 
@@ -341,7 +343,7 @@ class ProductController extends AbstractController
         $this->entityManager->persist($order);
         $this->entityManager->flush();
 
-        $responseData = ['message' => 'Order created successfully'];
+        $responseData = ['message' => 'Order created successfully.'];
 
         return new JsonResponse($responseData, 201);
     }

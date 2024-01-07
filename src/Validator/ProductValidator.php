@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Utils;
+namespace App\Validator;
 
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
@@ -10,9 +10,16 @@ use Symfony\Component\Validator\Constraints as Assert;
 use App\Validator\Constraints as CustomAssert;
 use Exception;
 
-trait ValidatorTrait
+class ProductValidator
 {
-    private function pageValidator(Request $request, ValidatorInterface $validator): ?array
+    private ValidatorInterface $validator;
+
+    public function __construct(ValidatorInterface $validator)
+    {
+        $this->validator = $validator;
+    }
+
+    public function pageValidator(Request $request): ?array
     {
         $errors = [];
 
@@ -20,7 +27,7 @@ trait ValidatorTrait
         $pageSize = $request->query->get('pageSize', 10);
 
         if (!is_numeric($page) || $page == '0') {
-            $violations = $validator->validate($page, [
+            $violations = $this->validator->validate($page, [
                 new Assert\NotBlank(),
                 new Assert\Type(['type' => 'integer', 'message' => 'Value must be an integer and must be positive.']),
             ]);
@@ -33,7 +40,7 @@ trait ValidatorTrait
         }
 
         if (!is_numeric($pageSize) || $pageSize == '0') {
-            $violations = $validator->validate($pageSize, [
+            $violations = $this->validator->validate($pageSize, [
                 new Assert\NotBlank(),
                 new Assert\Type(['type' => 'integer', 'message' => 'Value must be an integer and must be positive.']),
             ]);
@@ -52,7 +59,7 @@ trait ValidatorTrait
         return [(int)$page, (int)$pageSize];
     }
 
-    private function idValidator(Request $request, ValidatorInterface $validator): ?array
+    public function idValidator(Request $request): ?array
     {
         $errors = [];
 
@@ -60,7 +67,7 @@ trait ValidatorTrait
         $priceListId = $request->query->get('priceListId');
 
         if ((!is_numeric($userId) && $userId !== null) || $userId == '0') {
-            $violations = $validator->validate($userId, [
+            $violations = $this->validator->validate($userId, [
                 new Assert\NotBlank(),
                 new Assert\Type(['type' => 'integer', 'message' => 'Value must be an integer and must be positive.']),
             ]);
@@ -73,7 +80,7 @@ trait ValidatorTrait
         }
 
         if ((!is_numeric($priceListId) && $priceListId !== null) || $priceListId == '0') {
-            $violations = $validator->validate($priceListId, [
+            $violations = $this->validator->validate($priceListId, [
                 new Assert\NotBlank(),
                 new Assert\Type(['type' => 'integer', 'message' => 'Value must be an integer and must be positive.']),
             ]);
@@ -92,12 +99,12 @@ trait ValidatorTrait
         return [$userId ? (int)$userId : null, $priceListId ? (int)$priceListId : null];
     }
 
-    private function urlParamValidator(string $value, ValidatorInterface $validator, string $key = ''): ?int
+    public function urlParamValidator(string $value, string $key = ''): ?int
     {
         $errors = [];
 
         if (!is_numeric($value) || $value == '0') {
-            $violations = $validator->validate($value, [
+            $violations = $this->validator->validate($value, [
                 new Assert\NotBlank(),
                 new Assert\Type(['type' => 'integer', 'message' => 'Value must be an integer and must be positive.']),
             ]);
@@ -116,7 +123,7 @@ trait ValidatorTrait
         return $value ? (int)$value : null;
     }
 
-    private function productFilterValidator(Request $request, ValidatorInterface $validator): ?array
+    public function productFilterValidator(Request $request): ?array
     {
         $errors = [];
 
@@ -127,8 +134,21 @@ trait ValidatorTrait
         $filterByMaxPrice = $request->query->get('maxPrice');
         $filterByMinPrice = $request->query->get('minPrice');
 
+        /* 'sortBy' validation */
+        $violations = $this->validator->validate($sortBy, [
+            new Assert\NotBlank(),
+            new Assert\Choice(['choices' => ['name', 'netPrice', 'SKU', 'description', 'published'], 
+                'message' => 'The value you selected is not a valid choice (valid choices are \'name\', \'netPrice\', \'SKU\', \'description\' and \'published\').']),
+        ]);
+
+        if (count($violations) > 0) {
+            foreach ($violations as $violation) {
+                $errors['sortBy'][] = $violation->getMessage();
+            }
+        }
+
         /* 'sortOrder' validation */
-        $violations = $validator->validate($sortOrder, [
+        $violations = $this->validator->validate($sortOrder, [
             new Assert\NotBlank(),
             new Assert\Choice(['choices' => ['asc', 'desc'], 
                 'message' => 'The value you selected is not a valid choice (valid choices are \'asc\' and \'desc\').']),
@@ -142,7 +162,7 @@ trait ValidatorTrait
 
         /* 'maxPrice' & 'minPrice' validations */
         if (!is_numeric($filterByMaxPrice)) {
-            $violations = $validator->validate($filterByMaxPrice, [
+            $violations = $this->validator->validate($filterByMaxPrice, [
                 new Assert\NotBlank(),
                 new Assert\PositiveOrZero(),
                 new CustomAssert\Currency()
@@ -156,7 +176,7 @@ trait ValidatorTrait
         }
 
         if (!is_numeric($filterByMinPrice)) {
-            $violations = $validator->validate($filterByMinPrice, [
+            $violations = $this->validator->validate($filterByMinPrice, [
                 new Assert\NotBlank(),
                 new Assert\PositiveOrZero(),
                 new CustomAssert\Currency()

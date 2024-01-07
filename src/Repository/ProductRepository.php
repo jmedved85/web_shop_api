@@ -46,19 +46,19 @@ class ProductRepository extends ServiceEntityRepository
         $qb = $this->createQueryBuilder('p');
 
         if ($userId) {
-            $qb 
+            $qb
+                ->select('p', 'cl.price AS contractListPrice')
                 ->join('p.contractLists', 'cl')
-                ->addSelect('cl.price AS contractListPrice')
                 ->andWhere('cl.user = :userId')
-                ->setParameter('userId', $userId)
-            ;
-        } else if ($priceListId) {
-            $qb 
+                ->setParameter('userId', $userId);
+        } elseif ($priceListId) {
+            $qb
+                ->select('p', 'ppl.price AS priceListPrice')
                 ->join('p.productPriceLists', 'ppl')
-                ->addSelect('ppl.price AS priceListPrice')
                 ->andWhere('ppl.priceList = :priceListId')
-                ->setParameter('priceListId', $priceListId)
-            ;
+                ->setParameter('priceListId', $priceListId);
+        } else {
+            $qb->select('p');
         }
 
         $qb
@@ -319,29 +319,4 @@ class ProductRepository extends ServiceEntityRepository
 
         return $result;
     }
-
-//    /**
-//     * @return Product[] Returns an array of Product objects
-//     */
-//    public function findByExampleField($value): array
-//    {
-//        return $this->createQueryBuilder('p')
-//            ->andWhere('p.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->orderBy('p.id', 'ASC')
-//            ->setMaxResults(10)
-//            ->getQuery()
-//            ->getResult()
-//        ;
-//    }
-
-//    public function findOneBySomeField($value): ?Product
-//    {
-//        return $this->createQueryBuilder('p')
-//            ->andWhere('p.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->getQuery()
-//            ->getOneOrNullResult()
-//        ;
-//    }
 }
